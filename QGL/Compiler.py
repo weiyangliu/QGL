@@ -301,7 +301,11 @@ def compile_to_hardware(seqs,
                         qgl2=False,
                         addQGL2SlaveTrigger=False,
                         edgesToCompile = None,
-                        qubitToCompile = None):
+                        qubitToCompile = None,
+                        meas_qs = None,
+                        meas_decoupled_qs = None,
+                        CR_chs = None,
+                        CR_decoupled_chs = None):
     '''
     Compiles 'seqs' to a hardware description and saves it to 'fileName'.
     Other inputs:
