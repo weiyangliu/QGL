@@ -37,15 +37,16 @@ def PiRabi(controlQ,
              MEAS(targetQ)*MEAS(controlQ)] for l in lengths] + \
               create_cal_seqs([targetQ,controlQ], calRepeats, measChans=(targetQ,controlQ))
 
-    fileNames = compile_to_hardware(seqs, 'PiRabi/PiRabi',
+    metafile = compile_to_hardware(seqs, 'PiRabi/PiRabi',
         axis_descriptor=[
             delay_descriptor(np.concatenate((lengths, lengths))),
             cal_descriptor((controlQ, targetQ), calRepeats)
         ])
-    print(fileNames)
 
     if showPlot:
-        plot_pulse_files(fileNames)
+        plot_pulse_files(metafile)
+
+    return metafile
 
 
 def EchoCRLen(controlQ,
@@ -70,19 +71,26 @@ def EchoCRLen(controlQ,
 	calRepeats : number of repetitions of readout calibrations for each 2-qubit state
 	showPlot : whether to plot (boolean)
 	"""
-    seqs = [[Id(controlQ)] + echoCR(controlQ, targetQ, length=l, phase=phase, amp=amp, riseFall=riseFall) + [Id(controlQ), MEAS(targetQ)*MEAS(controlQ)]\
-     for l in lengths]+ [[X(controlQ)] + echoCR(controlQ, targetQ, length=l, phase= phase, amp=amp, riseFall=riseFall) + [X(controlQ), MEAS(targetQ)*MEAS(controlQ)]\
-      for l in lengths] + create_cal_seqs((targetQ,controlQ), calRepeats, measChans=(targetQ,controlQ))
+    seqs = [[Id(controlQ),
+             echoCR(controlQ, targetQ, length=l, phase=phase, amp=amp, riseFall=riseFall),
+             Id(controlQ),
+             MEAS(targetQ)*MEAS(controlQ)] for l in lengths] + \
+           [[X(controlQ),
+             echoCR(controlQ, targetQ, length=l, phase= phase, amp=amp, riseFall=riseFall),
+             X(controlQ),
+             MEAS(targetQ)*MEAS(controlQ)] for l in lengths] + \
+           create_cal_seqs((targetQ,controlQ), calRepeats, measChans=(targetQ,controlQ))
 
-    fileNames = compile_to_hardware(seqs, 'EchoCR/EchoCR',
+    metafile = compile_to_hardware(seqs, 'EchoCR/EchoCR',
         axis_descriptor=[
             delay_descriptor(np.concatenate((lengths, lengths))),
             cal_descriptor((controlQ, targetQ), calRepeats)
         ])
-    print(fileNames)
 
     if showPlot:
-        plot_pulse_files(fileNames)
+        plot_pulse_files(metafile)
+
+    return metafile
 
 
 def EchoCRPhase(controlQ,
@@ -107,9 +115,15 @@ def EchoCRPhase(controlQ,
 	calRepeats : number of repetitions of readout calibrations for each 2-qubit state
 	showPlot : whether to plot (boolean)
 	"""
-    seqs = [[Id(controlQ)] + echoCR(controlQ, targetQ, length=length, phase=ph, amp=amp, riseFall=riseFall) + [X90(targetQ)*Id(controlQ), MEAS(targetQ)*MEAS(controlQ)] \
-    for ph in phases]+[[X(controlQ)] + echoCR(controlQ, targetQ, length=length, phase= ph, amp=amp, riseFall = riseFall) + [X90(targetQ)*X(controlQ), MEAS(targetQ)*MEAS(controlQ)]\
-     for ph in phases]+create_cal_seqs((targetQ,controlQ), calRepeats, measChans=(targetQ,controlQ))
+    seqs = [[Id(controlQ),
+             echoCR(controlQ, targetQ, length=length, phase=ph, amp=amp, riseFall=riseFall),
+             X90(targetQ)*Id(controlQ),
+             MEAS(targetQ)*MEAS(controlQ)] for ph in phases] + \
+           [[X(controlQ),
+             echoCR(controlQ, targetQ, length=length, phase= ph, amp=amp, riseFall = riseFall),
+             X90(targetQ)*X(controlQ),
+             MEAS(targetQ)*MEAS(controlQ)] for ph in phases] + \
+             create_cal_seqs((targetQ,controlQ), calRepeats, measChans=(targetQ,controlQ))
 
     axis_descriptor = [
         {
@@ -121,12 +135,13 @@ def EchoCRPhase(controlQ,
         cal_descriptor((controlQ, targetQ), calRepeats)
     ]
 
-    fileNames = compile_to_hardware(seqs, 'EchoCR/EchoCR',
+    metafile = compile_to_hardware(seqs, 'EchoCR/EchoCR',
         axis_descriptor=axis_descriptor)
-    print(fileNames)
 
     if showPlot:
-        plot_pulse_files(fileNames)
+        plot_pulse_files(metafile)
+
+    return metafile
 
 
 def EchoCRAmp(controlQ,
@@ -151,9 +166,15 @@ def EchoCRAmp(controlQ,
 	calRepeats : number of repetitions of readout calibrations for each 2-qubit state
 	showPlot : whether to plot (boolean)
 	"""
-    seqs = [[Id(controlQ)] + echoCR(controlQ, targetQ, length=length, phase=phase, riseFall=riseFall,amp=a) + [Id(controlQ), MEAS(targetQ)*MEAS(controlQ)]\
-     for a in amps]+ [[X(controlQ)] + echoCR(controlQ, targetQ, length=length, phase= phase, riseFall=riseFall,amp=a) + [X(controlQ), MEAS(targetQ)*MEAS(controlQ)]\
-      for a in amps] + create_cal_seqs((targetQ,controlQ), calRepeats, measChans=(targetQ,controlQ))
+    seqs = [[Id(controlQ),
+             echoCR(controlQ, targetQ, length=length, phase=phase, riseFall=riseFall,amp=a),
+             Id(controlQ),
+             MEAS(targetQ)*MEAS(controlQ)] for a in amps] + \
+           [[X(controlQ),
+             echoCR(controlQ, targetQ, length=length, phase= phase, riseFall=riseFall,amp=a),
+             X(controlQ),
+             MEAS(targetQ)*MEAS(controlQ)] for a in amps] + \
+           create_cal_seqs((targetQ,controlQ), calRepeats, measChans=(targetQ,controlQ))
 
     axis_descriptor = [
         {
@@ -165,9 +186,9 @@ def EchoCRAmp(controlQ,
         cal_descriptor((controlQ, targetQ), calRepeats)
     ]
 
-    fileNames = compile_to_hardware(seqs, 'EchoCR/EchoCR',
+    metafile = compile_to_hardware(seqs, 'EchoCR/EchoCR',
         axis_descriptor=axis_descriptor)
-    print(fileNames)
-
     if showPlot:
-        plot_pulse_files(fileNames)
+        plot_pulse_files(metafile)
+
+    return metafile

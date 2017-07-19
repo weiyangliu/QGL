@@ -35,13 +35,13 @@ class CompileUtils(unittest.TestCase):
     def test_add_gate_pulses(self):
         q1 = self.q1
         seq = [X90(q1), Y90(q1)]
-        PatternUtils.add_gate_pulses([seq])
+        PatternUtils.add_gate_pulses(seq)
         assert ([self.q1gate in entry.pulses.keys() for entry in seq] ==
                 [True, True])
 
         q2 = self.q2
         seq = [X90(q1), X90(q2), X(q1) * Y(q2)]
-        PatternUtils.add_gate_pulses([seq])
+        PatternUtils.add_gate_pulses(seq)
         assert ([self.q1gate in entry.pulses.keys() for entry in seq] ==
                 [True, False, True])
         assert ([self.q2gate in entry.pulses.keys() for entry in seq] ==
@@ -158,6 +158,20 @@ class CompileUtils(unittest.TestCase):
         wire_meas = Compiler.count_measurements_per_wire(wireSeqs)
         assert wire_meas[mq1] == 3
         assert wire_meas[mq2] == 4
+
+    def test_frame_update(self):
+        # test that the compiler replaces Z's with frame updates
+        q1 = self.q1
+        # sequence of five X's separated by Z90s
+        seq = [X(q1), Z90(q1), X(q1), Z90(q1), X(q1), Z90(q1), X(q1), Z90(q1), X(q1)]
+        # each X should pick up the frame change of the following Z90, except for
+        # the last one
+        out_seq = Compiler.compile_sequence(seq)[q1]
+        expected_frame_change = [-0.5*np.pi]*4 + [0.0]
+
+        assert len(out_seq) == 5
+        for p, frame_change in zip(out_seq, expected_frame_change):
+            assert p.frameChange == frame_change
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,7 +21,7 @@ import operator
 
 from math import pi, sin, cos, acos, sqrt
 import numpy as np
-from .PulseSequencer import Pulse, TAPulse, align
+from .PulseSequencer import Pulse, TAPulse, CompoundGate, align
 from functools import wraps, reduce
 
 
@@ -74,32 +74,61 @@ def Id(channel, *args, **kwargs):
 
 # the most generic pulse is Utheta
 def Utheta(qubit,
-           amp=0,
+           angle=0,
            phase=0,
            label='Utheta',
            ignoredStrParams=[],
            **kwargs):
-    '''  A generic rotation with variable amplitude and phase. '''
+    '''
+    A generic rotation with variable angle and phase.
+    This primitive needs to convert the requested rotation angle into a Pulse
+    amplitude. If the user would like to specify a specific amplitude, he/she
+    can specify it directly via the 'amp' keyword argument.
+    '''
     params = overrideDefaults(qubit, kwargs)
-        #amp and phase are now pulse parameters rather than shape parameters
+    # amp and phase are now pulse parameters rather than shape parameters
     if "amp" in params:
-      del params["amp"]
+        del params["amp"]
     if "phase" in params:
-      del params["phase"]
+        del params["phase"]
+    # allow override of angle -> amplitude lookup if the user provides an "amp"
+    # keyword argument
+    if "amp" in kwargs:
+        amp = kwargs["amp"]
+    else:
+        # construct an angle -> amplitude lookup table
+        # TODO should this live in the Channel object instead?
+        angle2amp = {
+            pi    :  qubit.pulseParams['piAmp'],
+            -pi   : -qubit.pulseParams['piAmp'],
+            pi/2  :  qubit.pulseParams['pi2Amp'],
+            -pi/2 : -qubit.pulseParams['pi2Amp'],
+        }
+        if angle in angle2amp:
+            amp = angle2amp[angle]
+        else:
+            # linearly scale based upon the 'pi/2' amplitude
+            amp  = (angle / pi/2) * qubit.pulseParams['pi2Amp']
     return Pulse(label, qubit, params, amp, phase, 0.0, ignoredStrParams)
 
 
 # generic pulses around X, Y, and Z axes
-def Xtheta(qubit, amp=0, label='Xtheta', ignoredStrParams=[], **kwargs):
-    '''  A generic X rotation with a variable amplitude  '''
-    ignoredStrParams += ['phase', 'frameChange']
-    return Utheta(qubit, amp, 0, label, ignoredStrParams, **kwargs)
+def Xtheta(qubit, angle=0, label='Xtheta', ignoredStrParams=None, **kwargs):
+    '''  A generic X rotation with a variable rotation angle  '''
+    if ignoredStrParams is None:
+        ignoredStrParams = ['phase', 'frameChange']
+    else:
+        ignoredStrParams += ['phase', 'frameChange']
+    return Utheta(qubit, angle, 0, label, ignoredStrParams, **kwargs)
 
 
-def Ytheta(qubit, amp=0, label='Ytheta', ignoredStrParams=[], **kwargs):
-    ''' A generic Y rotation with a variable amplitude '''
-    ignoredStrParams += ['phase', 'frameChange']
-    return Utheta(qubit, amp, pi / 2, label, ignoredStrParams, **kwargs)
+def Ytheta(qubit, angle=0, label='Ytheta', ignoredStrParams=None, **kwargs):
+    ''' A generic Y rotation with a variable rotation angle '''
+    if ignoredStrParams is None:
+        ignoredStrParams = ['phase', 'frameChange']
+    else:
+        ignoredStrParams += ['phase', 'frameChange']
+    return Utheta(qubit, angle, pi/2, label, ignoredStrParams, **kwargs)
 
 
 def Ztheta(qubit,
@@ -121,7 +150,7 @@ def Ztheta(qubit,
 @_memoize
 def X90(qubit, **kwargs):
     return Xtheta(qubit,
-                  qubit.pulseParams['pi2Amp'],
+                  pi/2,
                   label="X90",
                   ignoredStrParams=['amp'],
                   **kwargs)
@@ -129,7 +158,7 @@ def X90(qubit, **kwargs):
 @_memoize
 def X90m(qubit, **kwargs):
     return Xtheta(qubit,
-                  -qubit.pulseParams['pi2Amp'],
+                  -pi/2,
                   label="X90m",
                   ignoredStrParams=['amp'],
                   **kwargs)
@@ -137,7 +166,7 @@ def X90m(qubit, **kwargs):
 @_memoize
 def Y90(qubit, **kwargs):
     return Ytheta(qubit,
-                  qubit.pulseParams['pi2Amp'],
+                  pi/2,
                   label="Y90",
                   ignoredStrParams=['amp'],
                   **kwargs)
@@ -145,7 +174,7 @@ def Y90(qubit, **kwargs):
 @_memoize
 def Y90m(qubit, **kwargs):
     return Ytheta(qubit,
-                  -qubit.pulseParams['pi2Amp'],
+                  -pi/2,
                   label="Y90m",
                   ignoredStrParams=['amp'],
                   **kwargs)
@@ -157,17 +186,17 @@ def U90(qubit, phase=0, **kwargs):
     if "label" not in kwargs:
         kwargs["label"] = "U90"
     return Utheta(qubit,
-        qubit.pulseParams['pi2Amp'],
-        phase,
-        ignoredStrParams=['amp'],
-        **kwargs)
+                  pi/2,
+                  phase,
+                  ignoredStrParams=['amp'],
+                  **kwargs)
 
 if config.pulse_primitives_lib == 'standard':
     # pi rotations formed by different choice of pulse amplitude
     @_memoize
     def X(qubit, **kwargs):
         return Xtheta(qubit,
-                      qubit.pulseParams['piAmp'],
+                      pi,
                       label="X",
                       ignoredStrParams=['amp'],
                       **kwargs)
@@ -175,7 +204,7 @@ if config.pulse_primitives_lib == 'standard':
     @_memoize
     def Xm(qubit, **kwargs):
         return Xtheta(qubit,
-                      -qubit.pulseParams['piAmp'],
+                      -pi,
                       label="Xm",
                       ignoredStrParams=['amp'],
                       **kwargs)
@@ -183,7 +212,7 @@ if config.pulse_primitives_lib == 'standard':
     @_memoize
     def Y(qubit, **kwargs):
         return Ytheta(qubit,
-                      qubit.pulseParams['piAmp'],
+                      pi,
                       label="Y",
                       ignoredStrParams=['amp'],
                       **kwargs)
@@ -191,7 +220,7 @@ if config.pulse_primitives_lib == 'standard':
     @_memoize
     def Ym(qubit, **kwargs):
         return Ytheta(qubit,
-                      -qubit.pulseParams['piAmp'],
+                      -pi,
                       label="Ym",
                       ignoredStrParams=['amp'],
                       **kwargs)
@@ -202,10 +231,10 @@ if config.pulse_primitives_lib == 'standard':
         if "label" not in kwargs:
             kwargs["label"] = "U"
         return Utheta(qubit,
-            qubit.pulseParams['piAmp'],
-            phase,
-            ignoredStrParams=['amp'],
-            **kwargs)
+                      pi,
+                      phase,
+                      ignoredStrParams=['amp'],
+                      **kwargs)
 
 elif config.pulse_primitives_lib == 'all90':
     # pi rotations formed by two pi/2 rotations
@@ -282,8 +311,7 @@ def arb_axis_drag(qubit,
         calScale = (rotAngle / 2 / pi) * sampRate / sum(gaussPulse)
 
         #Calculate the phase ramp steps to achieve the desired Z component to the rotation axis
-        phaseSteps = -2 * pi * cos(
-            polarAngle) * calScale * gaussPulse / sampRate
+        phaseSteps = -2*pi * cos(polarAngle) * calScale * gaussPulse / sampRate
 
         #Calculate Z DRAG correction to phase steps
         #beta is a conversion between XY drag scaling and Z drag scaling
@@ -609,9 +637,10 @@ def flat_top_gaussian(chan,
     """
     A constant pulse with rising and falling gaussian shape
     """
-    return Utheta(chan, length=riseFall, amp=amp, phase=phase, shapeFun=PulseShapes.gaussOn, label=label+"_rise") + \
-           Utheta(chan, length=length, amp=amp, phase=phase, shapeFun=PulseShapes.constant, label=label+"_top") + \
-           Utheta(chan, length=riseFall, amp=amp, phase=phase, shapeFun=PulseShapes.gaussOff, label=label+"_fall")
+    p =  Utheta(chan, length=riseFall, amp=amp, phase=phase, shapeFun=PulseShapes.gaussOn, label=label+"_rise") + \
+         Utheta(chan, length=length, amp=amp, phase=phase, shapeFun=PulseShapes.constant, label=label+"_top") + \
+         Utheta(chan, length=riseFall, amp=amp, phase=phase, shapeFun=PulseShapes.gaussOff, label=label+"_fall")
+    return p._replace(label=label)
 
 
 def echoCR(controlQ,
@@ -644,7 +673,7 @@ def echoCR(controlQ,
                              label="echoCR_second_half")]
     if lastPi:
         seq += [X(controlQ)]
-    return seq
+    return CompoundGate(seq)
 
 
 def ZX90_CR(controlQ, targetQ, **kwargs):
@@ -666,21 +695,24 @@ def CNOT_CR(controlQ, targetQ, **kwargs):
 
     if edge.isforward(controlQ, targetQ):
         # control and target for CNOT and CR match
-        return ZX90_CR(controlQ, targetQ, **kwargs) + \
+        seq = ZX90_CR(controlQ, targetQ, **kwargs).seq + \
             [Z90m(controlQ) * X90m(targetQ)]
     else:
         # control and target for CNOT and CR are inverted
-        return [Y90(controlQ) * Y90(targetQ),
+        seq = [Y90(controlQ) * Y90(targetQ),
                 X(controlQ) * X(targetQ)] + \
-                ZX90_CR(targetQ, controlQ, **kwargs) + \
+                ZX90_CR(targetQ, controlQ, **kwargs).seq + \
                [Z90(targetQ),
                 X90(controlQ) * Y90(targetQ),
                 Y90m(controlQ) * X(targetQ)]
+    return CompoundGate(seq)
 
 def CNOT_simple(source, target, **kwargs):
     # construct (source, target) channel and pull parameters from there
     channel = ChannelLibrary.EdgeFactory(source, target)
     channel.pulseParams['piAmp'] = channel.pulseParams['amp']
+    # add "pi2Amp" too so that Utheta can construct its angle2amp lookup table
+    channel.pulseParams['pi2Amp'] = channel.pulseParams['amp'] / 2
     p = X(channel, **kwargs)
     return p._replace(label="CNOT")
 
