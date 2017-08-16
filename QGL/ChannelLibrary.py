@@ -477,7 +477,6 @@ def MarkerFactory(label, **kwargs):
 @_defer_factory
 def QubitFactory(label, **kwargs):
     ''' Return a saved qubit channel or create a new one. '''
-    print("Running the factory")
     if channelLib and label in channelLib and isinstance(channelLib[label],
                                                          Channels.Qubit):
         return channelLib[label]
