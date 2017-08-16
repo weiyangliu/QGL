@@ -32,6 +32,7 @@ import os
 import re
 import traceback
 import importlib
+from functools import wraps
 from atom.api import Atom, Str, Int, Typed
 import networkx as nx
 import yaml
@@ -454,6 +455,15 @@ class ChannelLibrary(Atom):
                     print("Changing {0} to {1}".format(chName, newLabel))
                     self.physicalChannelManager.name_changed(chName, newLabel)
 
+def _defer_factory(factFunc):
+    @wraps(factFunc)
+    def defer(*args, **kwargs):
+        if kwargs:
+            return lambda: factFunc(*args, **kwargs)
+        return lambda: factFunc(*args)
+    return defer
+
+@_defer_factory
 def MarkerFactory(label, **kwargs):
     '''Return a marker channel by name. Must be defined under top-level `markers`
     keyword in measurement configuration YAML.
@@ -464,8 +474,10 @@ def MarkerFactory(label, **kwargs):
     else:
         raise ValueError("Marker channel {} not found in channel library.".format(label))
 
+@_defer_factory
 def QubitFactory(label, **kwargs):
     ''' Return a saved qubit channel or create a new one. '''
+    print("Running the factory")
     if channelLib and label in channelLib and isinstance(channelLib[label],
                                                          Channels.Qubit):
         return channelLib[label]
@@ -473,6 +485,7 @@ def QubitFactory(label, **kwargs):
         return Channels.Qubit(label=label, **kwargs)
 
 
+@_defer_factory
 def MeasFactory(label, meas_type='autodyne', **kwargs):
     ''' Return a saved measurement channel or create a new one. '''
     if channelLib and label in channelLib and isinstance(channelLib[label],
@@ -482,6 +495,7 @@ def MeasFactory(label, meas_type='autodyne', **kwargs):
         return Channels.Measurement(label=label, meas_type=meas_type, **kwargs)
 
 
+@_defer_factory
 def EdgeFactory(source, target):
     if not channelLib:
         raise ValueError('Connectivity graph not found')

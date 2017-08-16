@@ -317,7 +317,8 @@ def compile_to_hardware(seqs,
     '''
     logger.debug("Compiling %d sequence(s)", len(seqs))
 
-    # Expand the 
+    # Evaluate any objects that have been deferred
+    seqs = eval_deferred_pulses(seqs)
 
     # save input code to file
     save_code(seqs, fileName + suffix)
@@ -627,7 +628,7 @@ def normalize(seq, channels=None):
         blocklen = block.length
         emptyChannels = channels - set(block.pulses.keys())
         for ch in emptyChannels:
-            block.pulses[ch] = Id(ch, blocklen)
+            block.pulses[ch] = Id(ch, blocklen)()
     return seq
 
 class Waveform(object):
@@ -713,12 +714,12 @@ def schedule(channel, pulse, blockLength, alignment):
         # no padding element required
         return pulses
     elif alignment == "left":
-        return pulses + [Id(channel, padLength)]
+        return pulses + [Id(channel, padLength)()]
     elif alignment == "right":
-        return [Id(channel, padLength)] + pulses
+        return [Id(channel, padLength)()] + pulses
     else:  # center
-        return [Id(channel, padLength / 2)] + pulses + [Id(channel, padLength /
-                                                           2)]
+        return [Id(channel, padLength / 2)()] + pulses + [Id(channel, padLength /
+                                                           2)()]
 
 
 def validate_linklist_channels(linklistChannels):
