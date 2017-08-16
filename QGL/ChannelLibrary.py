@@ -212,7 +212,7 @@ class ChannelLibrary(Atom):
             instr_dict  = tmpLib['instruments']
             qubit_dict  = tmpLib['qubits']
             filter_dict = tmpLib['filters']
-            trigger_dict = tmpLib['markers']
+            trigger_dict = {} #tmpLib['markers']
             master_awgs = []
 
             # Construct the channel library

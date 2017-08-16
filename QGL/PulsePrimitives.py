@@ -65,7 +65,7 @@ def Id(channel, *args, **kwargs):
     if len(args) > 0 and isinstance(args[0], (int, float)):
         params['length'] = args[0]
 
-    return TAPulse("Id",
+    return lambda: TAPulse("Id",
                    channel,
                    params['length'],
                    0,
@@ -109,7 +109,7 @@ def Utheta(qubit,
         else:
             # linearly scale based upon the 'pi/2' amplitude
             amp  = (angle / pi/2) * qubit.pulse_params['pi2Amp']
-    return Pulse(label, qubit, params, amp, phase, 0.0, ignoredStrParams)
+    return lambda: Pulse(label, qubit, params, amp, phase, 0.0, ignoredStrParams)
 
 
 # generic pulses around X, Y, and Z axes
@@ -137,7 +137,7 @@ def Ztheta(qubit,
            ignoredStrParams=['amp', 'phase', 'length'],
            **kwargs):
     # special cased because it can be done with a frame update
-    return TAPulse(label,
+    return lambda: TAPulse(label,
                    qubit,
                    length=0,
                    amp=0,
@@ -333,7 +333,7 @@ def arb_axis_drag(qubit,
     params['rotAngle'] = rotAngle
     params['polarAngle'] = polarAngle
     params['shape_fun'] = PulseShapes.arb_axis_drag
-    return Pulse(kwargs["label"] if "label" in kwargs else "ArbAxis", qubit,
+    return lambda: Pulse(kwargs["label"] if "label" in kwargs else "ArbAxis", qubit,
                  params, 1.0, aziAngle, frameChange)
 
 
@@ -742,7 +742,7 @@ def MEAS(qubit, **kwargs):
     ignoredStrParams = ['phase', 'frameChange']
     if 'amp' not in kwargs:
         ignoredStrParams.append('amp')
-    return Pulse("MEAS", measChan, params, amp, 0.0, 0.0, ignoredStrParams)
+    return lambda: Pulse("MEAS", measChan, params, amp, 0.0, 0.0, ignoredStrParams)
 
 
 #MEAS and ring-down time on one qubit, echo on every other
@@ -776,7 +776,7 @@ def MeasEcho(qM, qD, delay, piShift=None, phase=0):
 
 # Gating/blanking pulse primitives
 def BLANK(chan, length):
-    return TAPulse("BLANK", chan.gate_chan, length, 1, 0, 0)
+    return lambda: TAPulse("BLANK", chan.gate_chan, length, 1, 0, 0)
 
 def TRIG(marker_chan, length):
     '''TRIG(marker_chan, length) generates a trigger output of amplitude 1 on
@@ -784,4 +784,4 @@ def TRIG(marker_chan, length):
     '''
     if not isinstance(marker_chan, Channels.LogicalMarkerChannel):
         raise ValueError("TRIG pulses can only be generated on LogicalMarkerChannels.")
-    return TAPulse("TRIG", marker_chan, length, 1.0, 0., 0.)
+    return lambda: TAPulse("TRIG", marker_chan, length, 1.0, 0., 0.)

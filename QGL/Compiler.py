@@ -296,6 +296,9 @@ def collect_specializations(seqs):
     return funcs
 
 
+def eval_deferred_pulses(seqs):
+    return [[pulse() for pulse in seq] for seq in seqs]
+
 def compile_to_hardware(seqs,
                         fileName,
                         suffix='',
@@ -313,6 +316,8 @@ def compile_to_hardware(seqs,
         add_slave_trigger (optional): add the slave trigger(s)
     '''
     logger.debug("Compiling %d sequence(s)", len(seqs))
+
+    # Expand the 
 
     # save input code to file
     save_code(seqs, fileName + suffix)
