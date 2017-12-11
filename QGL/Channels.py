@@ -143,7 +143,7 @@ class Qubit(LogicalChannel):
                                 'sigma': 5e-9})
     gate_chan = Instance((str, LogicalMarkerChannel))
     frequency = Float(0.0).tag(
-        desc='modulation frequency of the channel (can be positive or negative)')
+        desc='Actual frequency or modulation frequency of the channel (which can be positive or negative)')
 
     def __init__(self, **kwargs):
         super(Qubit, self).__init__(**kwargs)

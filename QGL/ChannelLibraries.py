@@ -319,6 +319,7 @@ class ChannelLibrary(Atom):
                 channel_dict[params["label"]] = params
                 if 'generator' in qubit["control"].keys():
                     channel_dict[params["phys_chan"]]["generator"] = qubit["control"]["generator"]
+                    channel_dict[name]["frequency"] = qubit["control"].get("sidebanding", 0.0)
 
                 # Create the measurements
                 if len(qubit["measure"]["AWG"].split()) != 2:
@@ -336,6 +337,8 @@ class ChannelLibrary(Atom):
                 channel_dict[params["label"]] = params
                 if 'generator' in qubit["measure"].keys():
                     channel_dict[params["phys_chan"]]["generator"] = qubit["measure"]["generator"]
+                    params["frequency"] = 0.0
+                    params["autodyne_freq"] = qubit["measure"].get("sidebanding", 0.0)
 
                 # Create the receiver channels
                 if "receiver" in qubit["measure"].keys():
