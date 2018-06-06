@@ -313,7 +313,7 @@ def compile_to_hardware(seqs,
             the time delays between pulses.
         add_slave_trigger (optional): add the slave trigger(s)
     '''
-    # ChannelLibraries.channelLib.update_channelDict()
+    ChannelLibraries.channelLib.update_channelDict()
 
     logger.debug("Compiling %d sequence(s)", len(seqs))
 
