@@ -39,9 +39,9 @@ from . import BlockLabel
 logger = logging.getLogger(__name__)
 
 def map_logical_to_physical(wires):
-    # construct a mapping of physical channels to lists of logical channels
-    # (there will be more than one logical channel if multiple logical
-    # channels share a physical channel)
+    """construct a mapping of physical channels to lists of logical channels
+    (there will be more than one logical channel if multiple logical
+    channels share a physical channel)"""
     physicalChannels = {}
     for logicalChan in wires.keys():
         phys_chan = logicalChan.phys_chan
@@ -435,6 +435,12 @@ def compile_to_hardware(seqs,
             files[awgName] = fullFileName
 
     # create meta output
+    db_info = {
+        'db_provider': ChannelLibraries.channelLib.database_provider,
+        'db_filename': ChannelLibraries.channelLib.database_file,
+        'library_name': 'working',
+        'library_id': ChannelLibraries.channelLib.channelDatabase.id
+    }
     if not axis_descriptor:
         axis_descriptor = [{
             'name': 'segment',
@@ -447,6 +453,7 @@ def compile_to_hardware(seqs,
         if wire.receiver_chan:
             receiver_measurements[wire.receiver_chan.label] = n
     meta = {
+        'database_info': db_info,
         'instruments': files,
         'num_sequences': len(seqs),
         'num_measurements': num_measurements,
