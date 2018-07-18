@@ -31,7 +31,7 @@ from .PatternUtils import flatten, has_gate
 from . import Channels
 from . import ChannelLibraries
 from . import PulseShapes
-from .PulsePrimitives import Id
+from .PulsePrimitives import Id, clear_pulse_cache
 from .PulseSequencer import Pulse, PulseBlock, CompositePulse
 from . import ControlFlow
 from . import BlockLabel
@@ -318,6 +318,7 @@ def compile_to_hardware(seqs,
         add_slave_trigger (optional): add the slave trigger(s)
     '''
     ChannelLibraries.channelLib.update_channelDict()
+    # clear_pulse_cache()
 
     logger.debug("Compiling %d sequence(s)", len(seqs))
 
@@ -463,7 +464,7 @@ def compile_to_hardware(seqs,
         'num_measurements': num_measurements,
         'axis_descriptor': axis_descriptor,
         'qubits': [c.label for c in channels if isinstance(c, Channels.Qubit)],
-        'measurements': [c.label for c in channels if isinstance(c, Channels.Measurement)], 
+        'measurements': [c.label for c in channels if isinstance(c, Channels.Measurement)],
         'receivers': receiver_measurements
     }
     if extra_meta:
