@@ -98,6 +98,12 @@ class Pulse(namedtuple("Pulse", ["label", "channel", "length", "amp", "phase", "
         ptype = promote_type(self, other)
         return self.promote(ptype) * other.promote(ptype)
 
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
     def promote(self, ptype):
         # promote a Pulse to a PulseBlock
         return ptype(self)

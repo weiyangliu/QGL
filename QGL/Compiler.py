@@ -20,7 +20,7 @@ import numpy as np
 import os
 import operator
 from warnings import warn
-from copy import copy
+from copy import copy, deepcopy
 from functools import reduce
 from importlib import import_module
 import json
@@ -325,6 +325,7 @@ def compile_to_hardware(seqs,
     save_code(seqs, fileName + suffix)
 
     # all sequences should start with a WAIT for synchronization
+    seqs = deepcopy(seqs)
     for seq in seqs:
         if not isinstance(seq[0], ControlFlow.Wait):
             logger.debug("Adding a WAIT - first sequence element was %s", seq[0])
